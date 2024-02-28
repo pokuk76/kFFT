@@ -1,0 +1,6 @@
+square_approach/
+test/
+*/simfab_traces/
+*.json
+*.elf
+*.log
