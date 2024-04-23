@@ -1,5 +1,5 @@
-square_approach/
-test/
+kFFT/square_approach/
+kFFT/test/
 */simfab_traces/
 *.json
 *.elf

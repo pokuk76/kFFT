@@ -1,0 +1,66 @@
+// N-point FFT
+// param N: i16;
+param width: i16;
+
+// color/ task ID map
+//
+//  ID var             ID var              ID var               ID var
+//   0 c2d_x_color_0    9 EXIT             18                   27 reserved (memcpy)
+//   1 c2d_x_color_1   10 scatter_x        19                   28 reserved (memcpy)
+//   2 c2d_x_color_2   11 broadcast_x_down 20                   29 reserved
+//   3 c2d_x_color_3   12 compute          21 reserved (memcpy) 30 reserved (memcpy)
+//   4                 13 gather_result    22 reserved (memcpy) 31 reserved
+//   5                 14 c2d_x_entrypt_0  23 reserved (memcpy) 32
+//   6                 15 c2d_x_entrypt_1  24                   33
+//   7                 16 c2d_x_entrypt_2  25                   34
+//   8 LAUNCH          17 c2d_x_entrypt_3  26                   35
+
+// Colors
+const LAUNCH: color = @get_color(8);  // a routable color for RPC
+
+// Task IDs
+// const EXIT: local_task_id = @get_local_task_id(9);
+
+
+const memcpy = @import_module("<memcpy/get_params>", .{
+  .LAUNCH = LAUNCH,
+  .width = width,
+});
+
+const c2d = @import_module("<collectives_2d/params>");
+
+layout {
+  // @comptime_print(width);
+  // Use a 1-by-8 grid of PEs because the SDK's currently only has a column-wise broadcast
+  // PE coordinates are (column, row)
+  @set_rectangle(width, 1);
+
+  for (@range(i16, width)) |i| {
+
+    // .x_entrypoints = .{ @get_local_task_id(14), @get_local_task_id(15), @get_local_task_id(16), @get_local_task_id(17) },
+    // const c2d_params = c2d.get_params(i, 0, .{
+    //  .x_colors      = .{ @get_color(0), @get_color(1), @get_color(2), @get_color(3) },
+    // });
+    const c2d_params = c2d.get_params(i, 0, .{
+        .x_colors = .{ @get_color(0), @get_color(1), @get_color(2), @get_color(3), @get_color(4), @get_color(5), @get_color(6), @get_color(7) },
+        .y_colors = .{ @get_color(14), @get_color(15), @get_color(16), @get_color(17), @get_color(18), @get_color(19), @get_color(20), @get_color(21)},
+      });
+    
+    @set_tile_code(i, 0, "pe_fft.csl", .{
+      .memcpy_params = memcpy.get_params(i),
+      .c2d_params = c2d_params,
+      .width = width,
+      .LAUNCH = LAUNCH
+      //.EXIT = EXIT
+    });
+  }
+
+  // Export device symbol for input array "x" (not sure we need to do that) and output array "y"
+  // Last argument is mutability: host can read y, but not write to it
+  // @export_name("x", [*]f32, true);  // Input vector
+  @export_name("y", [*]f32, false);  // Output vector
+  
+  // Export host-callable device function
+  @export_name("main", fn()void);
+}
+
