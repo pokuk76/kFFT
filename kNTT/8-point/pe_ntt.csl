@@ -52,11 +52,30 @@ fn modSub(a: u32, b: u32, m: u32) u32 {
     return (a - b) % m;
 }
 
+// 
+fn modExp(base: u32, exp: u32, m: u32) u32 {
+    if (m == 1) {
+        return 0;
+    }
+    var result: u32 = 1;
+    var _base: u32 = base;
+    var _exp: u32 = exp;
+    _base = _base % m;
+    while (_exp > 0) {
+        if (_exp % 2 == 1) {
+            result = (result * _base) % m;
+        }
+        _exp = _exp >> 1;
+        _base = (_base * _base) % m;
+    }
+    
+    return result;
+}
 
 // Implemented my own exponentiation because the CSL math library's pow function is only for floating point
 // TODO: It might be more efficient to use their implementation and just bitcast? Though this might be a useful approach 
 //       for BigIntegers if wee ever get there
-fn modExp(base: u32, exp: u32, m: u32) u32 {
+fn oldmodExp(base: u32, exp: u32, m: u32) u32 {
     var result: u32 = 1;
     for (@range(u32, exp)) |i| {
         result = modMul(result, base, m);
