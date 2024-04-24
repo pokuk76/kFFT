@@ -1,6 +1,6 @@
 kFFT/square_approach/
 kFFT/test/
-*/simfab_traces/
+**/simfab_traces/
 *.json
 *.elf
 *.log
